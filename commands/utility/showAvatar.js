@@ -7,8 +7,8 @@ const { getAvatar } = require('../../functions/avatar.js')
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('meuavatar')
-    .setDescription('Mostra seu próprio avatar')
+    .setName('avatar')
+    .setDescription('Mostra o avatar de um usuário')
     .addUserOption(option =>
       option
         .setName('usuario')
