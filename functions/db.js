@@ -48,98 +48,115 @@ function startDatabase() {
   console.log("[+] Database foi verificado!");
 }
 
-function insertDatabaseInfo(msg, user, callback) {
-  db.run(`
-    INSERT OR IGNORE
-    INTO phrases (phrase, user)
-    VALUES (?, ?)`,
-    [msg, user],
-    function(err) {
-      if (err) {
-        console.error(err.message);
-        return;
-      }
+function insertDatabaseInfo(msg, user) {
+  return new Promise((resolve, reject) => {
+    db.run(`
+      INSERT OR IGNORE
+      INTO phrases (phrase, user)
+      VALUES (?, ?)`,
+      [msg, user],
+      function(err) {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      console.log(`[+] (insertDatabaseInfo) "${msg}" de ${user} enviado para o banco de dados com sucesso`);
-    }
-  );
+        console.log(`[+] (insertDatabaseInfo) "${msg}" de ${user} enviado para o banco de dados com sucesso`);
+        resolve();
+      }
+    );
+  });
 }
 
-function consultDatabaseConfig(guildID, callback) {
-  db.get(`
-    SELECT * FROM guild_config
-    WHERE guild_id = ?`,
-    [guildID],
-    (err, row) => {
-      if (err) {
-        console.error(err.message);
-        return;
-      }
+function consultDatabaseConfig(guildID) {
+  return new Promise((resolve, reject) => {
+    db.get(`
+      SELECT * FROM guild_config
+      WHERE guild_id = ?`,
+      [guildID],
+      (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      return row;
-    }
-  );
+        resolve(row);
+      }
+    );
+  });
 }
 
 function editDatabaseConfig(guildId, prefix, automsg) {
-  // Update the database
-  db.run(`
-    INSERT INTO guild_config (guild_id, prefix, automsg)
-    VALUES (?, ?, ?)
-    ON CONFLICT(guild_id) DO UPDATE SET
-      prefix = excluded.prefix,
-      automsg = excluded.automsg`,
-    [guildId, prefix, automsg],
-    (err) => {
-      if (err) {
-        console.error(err.message);
-        return;
-      }
+  return new Promise((resolve, reject) => {
+    // Update the database
+    db.run(`
+      INSERT INTO guild_config (guild_id, prefix, automsg)
+      VALUES (?, ?, ?)
+      ON CONFLICT(guild_id) DO UPDATE SET
+        prefix = excluded.prefix,
+        automsg = excluded.automsg`,
+      [guildId, prefix, automsg],
+      (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      console.log(`[*] Configurações de comunidade (${guildId}) alterados`);
-    }
-  );
+        console.log(`[*] Configurações de comunidade (${guildId}) alterados`);
+        resolve();
+      }
+    );
+  });
 }
 
 // I'm working on it...
 // function deleteDatabaseInfo(id) {}
 
 function randomDatabase() {
-  db.get(`
-    SELECT * FROM phrases
-    ORDER BY RANDOM()
-    LIMIT 1`,
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
+  return new Promise((resolve, reject) => {
+    db.get(`
+      SELECT * FROM phrases
+      ORDER BY RANDOM()
+      LIMIT 1`,
+      (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      console.log(`[+] (random) Frase "${result.phrase}" foi escolhida!`);
-      return result.phrase;
-    }
-  );
+        console.log(`[+] (random) Frase "${row.phrase}" foi escolhida!`);
+        resolve(row.phrase);
+      }
+    );
+  });
 }
 
 function searchDatabaseRandomRegex(pattern) {
-  db.get(`
-    SELECT * FROM phrases
-    WHERE phrase LIKE ?
-    ORDER BY RANDOM()
-    LIMIT 1`,
-    [`%${pattern}%`],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return randomDatabase();
-      }
+  return new Promise((resolve, reject) => {
+    db.get(`
+      SELECT * FROM phrases
+      WHERE phrase LIKE ?
+      ORDER BY RANDOM()
+      LIMIT 1`,
+      [`%${pattern}%`],
+      (err, row) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      console.log(`[+] (randomRegex) Foi escolhida a mensagem "${searchRandom.phrase}"!`);
-      return searchRandom.phrase;
-    }
-  );
+          console.log(`[+] (randomRegex) Foi escolhida a mensagem "${row.phrase}"!`);
+          resolve(row.phrase);
+      }
+    );
+  });
 }
 
 module.exports = {
-  startDatabase
+  startDatabase,
+  insertDatabaseInfo,
+  consultDatabaseConfig,
+  editDatabaseConfig,
+  randomDatabase,
+  searchDatabaseRandomRegex
 }
